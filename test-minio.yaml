@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: prow
+  name: s3-credentials
+stringData:
+  service-account.json: |
+    {
+      "region": "minio",
+      "access_key": "minioadmin",
+      "endpoint": "minio.prow.svc.cluster.local",
+      "insecure": true,
+      "s3_force_path_style": true,
+      "secret_key": "minioadmin"
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: test-pods
+  name: s3-credentials
+stringData:
+  service-account.json: |
+    {
+      "region": "minio",
+      "access_key": "minioadmin",
+      "endpoint": "minio.prow.svc.cluster.local",
+      "insecure": true,
+      "s3_force_path_style": true,
+      "secret_key": "minioadmin"
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: prow
+spec:
+  selector:
+    matchLabels:
+      app: minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          args:
+#            - gateway
+#            - azure
+            - server
+            - /data
+            - --console-address=:9001
+          env:
+            - name: MINIO_ROOT_USER
+              value: "minioadmin"
+            - name: MINIO_ROOT_PASSWORD
+              value: "minioadmin"
+            - name: MINIO_REGION_NAME
+              value: minio
+          ports:
+            - containerPort: 9000
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            periodSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: prow
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    app: minio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-console
+  namespace: prow
+spec:
+  type: NodePort
+  ports:
+    - port: 8003
+      targetPort: 9001
+      protocol: TCP
+  selector:
+    app: minio
