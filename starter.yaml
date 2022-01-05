@@ -31,6 +31,11 @@ data:
         - verify-owners
         - wip
         - yuks
+        - pony
+        - size
+    welcome:  ##添加weblcome
+    - message_template: "Welcome @{{.AuthorLogin}}! <br><br>It looks like this is your first PR to <a href='https://github.com/{{.Org}}/{{.Repo}}'>{{.Org}}/{{.Repo}}</a> 🎉. Please refer to our [pull request process documentation](https://git.k8s.io/community/contributors/guide/pull-requests.md) to help your PR have a smooth ride to approval. <br><br>You will be prompted by a bot to use commands during the review process. Do not be afraid to follow the prompts! It is okay to experiment. [Here is the bot commands documentation](https://go.k8s.io/bot-commands). <br><br>You can also check if {{.Org}}/{{.Repo}} has [its own contribution guidelines](https://github.com/{{.Org}}/{{.Repo}}/tree/master/CONTRIBUTING.md). <br><br>You may want to refer to our [testing guide](https://git.k8s.io/community/contributors/devel/sig-testing/testing.md) if you run into trouble with your tests not passing. <br><br>If you are having difficulty getting your pull request seen, please follow the [recommended escalation practices](https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#why-is-my-pull-request-not-getting-reviewed). Also, for tips and tricks in the contribution process you may want to read the [Kubernetes contributor cheat sheet](https://git.k8s.io/community/contributors/guide/contributor-cheatsheet/README.md). We want to make sure your contribution gets all the attention it needs! <br><br>Thank you, and welcome to Kubernetes. :smiley:"
+
 ---
 #apiVersion: v1
 #kind: Secret
@@ -87,11 +92,11 @@ data:
 
     plank:
       job_url_prefix_config:
-        "*": https://prow.gitcpu.io/view/
+        "*": http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/view/
       report_templates:
         '*': >-
-            [Full PR test history](https://prow.gitcpu.io/pr-history?org={{.Spec.Refs.Org}}&repo={{.Spec.Refs.Repo}}&pr={{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}).
-            [Your PR dashboard](https://prow.gitcpu.io/pr?query=is:pr+state:open+author:{{with
+            [Full PR test history](http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/pr-history?org={{.Spec.Refs.Org}}&repo={{.Spec.Refs.Repo}}&pr={{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}).
+            [Your PR dashboard](http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/pr?query=is:pr+state:open+author:{{with
             index .Spec.Refs.Pulls 0}}{{.Author}}{{end}}).
       default_decoration_configs:
         "*":
@@ -118,6 +123,16 @@ data:
         orgs:
         - gitcpu-io
 
+    presubmits:
+      gitcpu-io/prow-demo:
+        - name: run-unit-test
+          agent: kubernetes
+          always_run: true
+          spec:
+            containers:
+              - image: golang:latest
+                command: [ "go","test","." ]
+
     decorate_all_jobs: true
 #    periodics:
 #    - interval: 1m
@@ -136,7 +151,7 @@ metadata:
   labels:
     app: hook
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -264,7 +279,7 @@ metadata:
   labels:
     app: deck
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -293,24 +308,38 @@ spec:
             - --github-graphql-endpoint=http://ghproxy/graphql
             - --s3-credentials-file=/etc/s3-credentials/service-account.json
             - --spyglass=true
-            - --github-app-id=$(GITHUB_APP_ID)
-            - --github-app-private-key-path=/etc/github/cert
-          env:
-            - name: GITHUB_APP_ID
-              valueFrom:
-                secretKeyRef:
-                  name: github-token
-                  key: appid
+            - --github-oauth-config-file=/etc/githuboauth/secret
+            - --cookie-secret=/etc/cookie/secret
+            - --github-token-path=/etc/github/oauth
+            - --oauth-url=/github-login
+            - --allow-insecure=true
+#            - --github-app-id=$(GITHUB_APP_ID)
+#            - --github-app-private-key-path=/etc/github/cert
+#          env:
+#            - name: GITHUB_APP_ID
+#              valueFrom:
+#                secretKeyRef:
+#                  name: github-token
+#                  key: appid
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
+            - name: oauth-config  #from github-oauth-config.yaml
+              mountPath: /etc/githuboauth
+              readOnly: true
+            - name: cookie-secret #from cookie
+              mountPath: /etc/cookie
+              readOnly: true
+            - name: oauth-token
+              mountPath: /etc/github
+              readOnly: true
             - name: config
               mountPath: /etc/config
               readOnly: true
-            - name: github-token
-              mountPath: /etc/github
-              readOnly: true
+#            - name: github-token
+#              mountPath: /etc/github
+#              readOnly: true
             - name: plugins
               mountPath: /etc/plugins
               readOnly: true
@@ -331,12 +360,21 @@ spec:
             periodSeconds: 3
             timeoutSeconds: 600
       volumes:
+        - name: oauth-config
+          secret:
+            secretName: github-oauth-config
+        - name: oauth-token
+          secret:
+            secretName: oauth-token
+        - name: cookie-secret
+          secret:
+            secretName: cookie
         - name: config
           configMap:
             name: config
-        - name: github-token
-          secret:
-            secretName: github-token
+#        - name: github-token
+#          secret:
+#            secretName: github-token
         - name: plugins
           configMap:
             name: plugins
@@ -922,6 +960,7 @@ spec:
             - --cache-sizeGB=99
             - --push-gateway=pushgateway
             - --serve-metrics=true
+            - --legacy-disable-disk-cache-partitions-by-auth-header=false
           ports:
             - containerPort: 8888
           volumeMounts:
