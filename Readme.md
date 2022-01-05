@@ -131,18 +131,13 @@ kubectl -n prow scale deploy ghproxy --replicas=1
 
 kubectl apply -f starter.yaml
 
+## 安装Github app到repo中，在github页面上操作
+
+在github->组织-> settings页面 -> installed Github Apps -> 操作你建立的github app -> Configure -> 选择仓库
 
 ## 配置prow的 hook组件
 
-> 安装Github app到repo中，在github->仓库-settings页面操作install app
-
-install-prow Installed GitHub Apps
-
-> 暴露hook地址到公网
-
-kubectl -n prow scale deploy hook --replicas=0
-
-kubectl -n prow scale deploy hook --replicas=1
+> 暴露hook、deck地址到公网
 
 kubectl -n prow edit svc hook
 
@@ -152,8 +147,13 @@ kubectl -n prow edit svc deck
 
 kubectl -n prow get svc
 
+> 重启hook的命令
 
-# 配置ngrok
+kubectl -n prow scale deploy hook --replicas=0
+
+kubectl -n prow scale deploy hook --replicas=1
+
+# 配置ngrok，端口号就是上面的svc的NodePort
 ```yaml
 tunnels:
   deck:
@@ -163,15 +163,17 @@ tunnels:
     proto: http
     addr: 31638
 ```
+> 启动
+
 ngrok start --all
-
-
 
 ## 得到hook的公网地址，作为某个仓库-webhooks中的callback url地址，注意添加path是 /hook
 
 http://5216-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/hook
 
 把之前的hmac-token填入github仓库的webhook的secret处
+
+cat hmac-token
 
 
 ## 配置prow的 deck组件 - 显示出PR status菜单
@@ -205,17 +207,20 @@ openssl rand -out cookie.txt -base64 32
 kubectl -n prow create secret generic cookie --from-file=secret=./cookie.txt
 
 > 4. 准备personal access token作为oauth-token
+
 echo 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 > oauth-token
+
+注意这里不是 =secret= 而是=oauth=
 
 kubectl -n prow create secret generic oauth-token --from-file=oauth=./oauth-token
 
 > 5. 修改starter.yaml的deck -> deployment部分
 
 > 6. 重启deck
+
 kubectl -n prow scale deploy deck --replicas=0
 
 kubectl -n prow scale deploy deck --replicas=1
-
 
 
 ## 搞定带color的label
@@ -240,24 +245,21 @@ kubectl apply -f label_sync_cron_job.yaml
 
 
 
-
-
-
-
-
 ## 遇到的问题, hook, tide, crier组件添加代理，前提是你有梯子~~~
 kubectl -n prow exec -it POD名字 sh
 
 export http_proxy=http://192.168.110.235:1089;export https_proxy=http://192.168.110.235:1089;
 
-## 设置git代理（在terminal中执行git push时加快速度）
+可以在容器内，查看git clone下来的repo信息，测试git clone
+
+cd /tmp
+
+git clone https://github.com/gitcpu-io/prow-demo.git
+
+### 宿主机本本设置git代理（在terminal中执行git push时加快速度）
 git config --global http.proxy http://192.168.110.235:1089
 git config --global https.proxy http://192.168.110.235:1089
 
-## 取消git代理
+### 宿主机本本取消git代理
 git config --global --unset http.proxy
 git config --global --unset https.proxy
-
-可以在容器内，查看git clone下来的repo信息
-
-cd /tmp
