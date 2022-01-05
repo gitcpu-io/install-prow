@@ -1,9 +1,9 @@
-#install prow
+# install prow
 
-##clone test-infra到本地
+## clone test-infra到本地
 git clone https://github.com/kubernetes/test-infra.git
 
-##准备hmac-token的secret
+## 准备hmac-token的secret
 
 cd install
 
@@ -15,7 +15,7 @@ kubectl create ns prow
 
 kubectl create secret -n prow generic hmac-token --from-file=hmac=./hmac-token
 
-##准备github-token，需要Github App的信息
+## 准备github-token，需要Github App的信息
 App ID: 162160
 
 > 从Github app下载private-key.pem到本地
@@ -26,20 +26,25 @@ cd install
 
 kubectl create secret -n prow generic github-token --from-file=cert=./private-key.pem --from-literal=appid=162160
 
-##准备替换
-The github app cert by replacing the <<insert-downloaded-cert-here>> string
-The github app id by replacing the <<insert-the-app-id-here>> string
-The hmac token by replacing the << insert-hmac-token-here >> string
+## 准备替换
+The github app cert by replacing the <<insert-downloaded-cert-here>> string(已通过命令执行)
+
+The github app id by replacing the <<insert-the-app-id-here>> string(已通过命令执行)
+
+The hmac token by replacing the << insert-hmac-token-here >> string(已通过命令执行)
+
 The domain by replacing the << your-domain.com >> string 必须要替换成功
+
 Optionally, you can update the cert-manager.io/cluster-issuer: annotation if you use cert-manager
+
 Your github organization(s) by replacing the << your_github_org >> string
 
-##准备image，替换成gcr.io的镜像，执行下面这个shell
+## 准备image，替换成gcr.io的镜像，执行下面这个shell
 cd install-prow
 
 ./load_images.sh
 
-##测试minio本地docker运行，可以不用执行
+## 测试minio本地docker运行，可以不用执行
 docker run \
 -d \
 --name minio \
@@ -49,12 +54,12 @@ docker run \
 -e "MINIO_ROOT_PASSWORD=minioadmin" \
 quay.io/minio/minio server /data --console-address ":9001"
 
-##测试minio运行到k8s中，可以不用执行
+## 测试minio运行到k8s中，可以不用执行
 cd install-prow
 
 kubectl apply -f test-minio.yaml
 
-##安装prowjob的crd
+## 安装prowjob的crd
 
 > 从你test-infra目录中copy prowjob的crd文件
 
@@ -64,14 +69,14 @@ cp ~/app/test-infra/config/prow/cluster/prowjob_customresourcedefinition.yaml ./
 
 kubectl apply --server-side=true -f prowjob_customresourcedefinition.yaml
 
-##安装prow
+## 安装prow
 
 cd install-prow
 
 kubectl apply -f starter.yaml
 
 
-##验证一下prow的各个组件是否成功
+## 验证一下prow的各个组件是否成功
 kubectl get pods -n prow
 
 > 在minio的console中创建bucket: tide
@@ -127,7 +132,7 @@ kubectl -n prow scale deploy ghproxy --replicas=1
 kubectl apply -f starter.yaml
 
 
-##配置prow的 hook组件
+## 配置prow的 hook组件
 
 > 安装Github app到repo中，在github->仓库-settings页面操作install app
 
@@ -148,7 +153,7 @@ kubectl -n prow edit svc deck
 kubectl -n prow get svc
 
 
-#配置ngrok
+# 配置ngrok
 ```yaml
 tunnels:
   deck:
@@ -171,7 +176,7 @@ http://5216-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/hook
 
 ## 配置prow的 deck组件 - 显示出PR status菜单
 
-###配置github oauth app
+### 配置github oauth app
 
 > 1.Create your GitHub Oauth application
 
@@ -213,9 +218,9 @@ kubectl -n prow scale deploy deck --replicas=1
 
 
 
-##搞定带color的label
+## 搞定带color的label
 
-###启动前编辑label_sync_job.yaml 和 label_sync_cron_job.yaml
+### 启动前编辑label_sync_job.yaml 和 label_sync_cron_job.yaml
 
 cd install-prow
 
@@ -225,7 +230,7 @@ cp ~/app/test-infra/label_sync/cluster/label_sync_cron_job.yaml ./
 
 cp ~/app/test-infra/label_sync/labels.yaml ./
 
-###通过labels.yaml创建 configMap: label-confg
+### 通过labels.yaml创建 configMap: label-confg
 
 kubectl -n prow create cm label-config --from-file=labels.yaml
 
@@ -240,13 +245,18 @@ kubectl apply -f label_sync_cron_job.yaml
 
 
 
-
-
-
 ## 遇到的问题, hook, tide, crier组件添加代理，前提是你有梯子~~~
 kubectl -n prow exec -it POD名字 sh
 
 export http_proxy=http://192.168.110.235:1089;export https_proxy=http://192.168.110.235:1089;
+
+## 设置git代理（在terminal中执行git push时加快速度）
+git config --global http.proxy http://192.168.110.235:1089
+git config --global https.proxy http://192.168.110.235:1089
+
+## 取消git代理
+git config --global --unset http.proxy
+git config --global --unset https.proxy
 
 可以在容器内，查看git clone下来的repo信息
 
