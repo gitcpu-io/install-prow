@@ -9,11 +9,13 @@ cd install
 
 openssl rand -hex 20 > ./hmac-token
 
-> 创建ns
+> 创建ns 和 hmac-token的secret
 
 kubectl create ns prow
 
+
 kubectl create secret -n prow generic hmac-token --from-file=hmac=./hmac-token
+
 
 ## 准备github-token，需要Github App的信息
 App ID: 162160
@@ -37,9 +39,9 @@ The domain by replacing the << your-domain.com >> string 必须要替换成功
 
 Optionally, you can update the cert-manager.io/cluster-issuer: annotation if you use cert-manager
 
-Your github organization(s) by replacing the << your_github_org >> string
+Your github organization(s) by replacing the << your_github_org >> string (你的组织账户)
 
-## 准备image，替换成gcr.io的镜像，执行下面这个shell
+## 准备image，替换成gcr.io的镜像，执行下面这个shell，如果可以访问gcr.io就不需要执行
 cd install-prow
 
 ./load_images.sh
@@ -248,7 +250,9 @@ kubectl apply -f label_sync_cron_job.yaml
 ## 遇到的问题, hook, tide, crier组件添加代理，前提是你有梯子~~~
 kubectl -n prow exec -it POD名字 sh
 
-export http_proxy=http://192.168.110.235:1089;export https_proxy=http://192.168.110.235:1089;
+export http_proxy=http://192.168.110.235:1089
+
+export https_proxy=http://192.168.110.235:1089
 
 可以在容器内，查看git clone下来的repo信息，测试git clone
 

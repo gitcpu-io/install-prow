@@ -33,8 +33,8 @@ spec:
               args:
               - --config=/etc/config/labels.yaml
               - --confirm=true
-#              - --orgs=kubernetes,kubernetes-client,kubernetes-csi,kubernetes-sigs
-              - --only=gitcpu-io/install-prow,gitcpu-io/prow-demo
+              - --orgs=gitcpu-io
+#              - --only=gitcpu-io/install-prow,gitcpu-io/prow-demo
               - --token=/etc/github/oauth
               volumeMounts:
               - name: oauth
