@@ -1,9 +1,9 @@
-# install prow
+# install prow 十步曲
 
 ## clone test-infra到本地
 git clone https://github.com/kubernetes/test-infra.git
 
-## 准备hmac-token的secret
+## 第一步：准备hmac-token的secret
 
 cd install
 
@@ -17,7 +17,7 @@ kubectl create ns prow
 kubectl create secret -n prow generic hmac-token --from-file=hmac=./hmac-token
 
 
-## 准备github-token，需要Github App的信息
+## 第二步：准备github-token，需要Github App的信息
 App ID: 162160
 
 > 从Github app下载private-key.pem到本地
@@ -28,18 +28,22 @@ cd install
 
 kubectl create secret -n prow generic github-token --from-file=cert=./private-key.pem --from-literal=appid=162160
 
-## 准备替换
+## 第三步：准备替换，粗体标注部分就可以了，其它的已完成
 The github app cert by replacing the <<insert-downloaded-cert-here>> string(已通过命令执行)
 
 The github app id by replacing the <<insert-the-app-id-here>> string(已通过命令执行)
 
 The hmac token by replacing the << insert-hmac-token-here >> string(已通过命令执行)
 
-The domain by replacing the << your-domain.com >> string 必须要替换成功
+**The domain by replacing the << your-domain.com >> string 必须要替换成功**
+
+把 prow.gitcpu.io 替换成你自己的本机域名，或是公有云域名
 
 Optionally, you can update the cert-manager.io/cluster-issuer: annotation if you use cert-manager
 
-Your github organization(s) by replacing the << your_github_org >> string (你的组织账户)
+**Your github organization(s) by replacing the << your_github_org >> string (你的组织账户)**
+
+把 gitcpu.io 替换成 你自己的组织
 
 ## 准备image，替换成gcr.io的镜像，执行下面这个shell，如果可以访问gcr.io就不需要执行
 cd install-prow
@@ -61,7 +65,7 @@ cd install-prow
 
 kubectl apply -f test-minio.yaml
 
-## 安装prowjob的crd
+## 第四步：安装ProwJob的CRD
 
 > 从你test-infra目录中copy prowjob的crd文件
 
@@ -71,14 +75,14 @@ cp ~/app/test-infra/config/prow/cluster/prowjob_customresourcedefinition.yaml ./
 
 kubectl apply --server-side=true -f prowjob_customresourcedefinition.yaml
 
-## 安装prow
+## 第五步：安装prow
 
 cd install-prow
 
 kubectl apply -f starter.yaml
 
 
-## 验证一下prow的各个组件是否成功
+## 第六步：验证一下prow的各个组件是否成功
 kubectl get pods -n prow
 
 > 在minio的console中创建bucket: tide
@@ -133,7 +137,7 @@ kubectl -n prow scale deploy ghproxy --replicas=1
 
 kubectl apply -f starter.yaml
 
-## 安装Github app到repo中，在github页面上操作
+## 第七步：安装Github app到repo中，在github页面上操作
 
 在github->组织-> settings页面 -> installed Github Apps -> 操作你建立的github app -> Configure -> 选择仓库
 
@@ -169,7 +173,7 @@ tunnels:
 
 ngrok start --all
 
-## 得到hook的公网地址，作为某个仓库-webhooks中的callback url地址，注意添加path是 /hook
+## 第八步：得到hook的公网地址，作为某个仓库-webhooks中的callback url地址，注意添加path是 /hook
 
 http://5216-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/hook
 
@@ -178,7 +182,7 @@ http://5216-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/hook
 cat hmac-token
 
 
-## 配置prow的 deck组件 - 显示出PR status菜单
+## 第九步：配置prow的 deck组件 - 显示出PR status菜单
 
 ### 配置github oauth app
 
@@ -225,7 +229,7 @@ kubectl -n prow scale deploy deck --replicas=0
 kubectl -n prow scale deploy deck --replicas=1
 
 
-## 搞定带color的label
+## 第十步：搞定带color的label
 
 ### 启动前编辑label_sync_job.yaml 和 label_sync_cron_job.yaml
 
