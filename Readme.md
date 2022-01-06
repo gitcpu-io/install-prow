@@ -20,7 +20,7 @@ kubectl create ns prow
 kubectl create secret -n prow generic hmac-token --from-file=hmac=./hmac-token
 
 
-## 第二步：准备github-token，需要Github App的信息
+## 第二步：准备github-token，需要Github App的信息( <a href="#1">连同第九步一起执行最简单</a> )
 App ID: 162160
 
 > 从Github app下载private-key.pem到本地
@@ -189,7 +189,7 @@ http://5216-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/hook
 cat hmac-token
 
 
-## 第九步：配置prow的 deck组件 - 显示出PR status菜单
+## <a name="1">第九步</a>：配置prow的 deck组件 - 显示出PR status菜单
 
 ### 配置github oauth app
 
@@ -257,6 +257,24 @@ kubectl -n prow create cm label-config --from-file=labels.yaml
 kubectl apply -f label_sync_job.yaml
 
 kubectl apply -f label_sync_cron_job.yaml
+
+# 终章，在公有云上部署Prow
+
+> 部署ingress-nginx
+
+kubectl apply -f ingress-nginx.yaml
+
+修改starter.yaml的ingress部分，添加minio-console，以及ingressClass
+
+> 重新执行
+
+kubectl apply -f starter.yaml
+
+**配置域名解析到公网IP，试着访问**
+
+- http://prow.gitcpu.io
+
+- http://prow.gitcpu.io/minio
 
 ## 添加presubmits，运行ProwJob
 ```yaml
