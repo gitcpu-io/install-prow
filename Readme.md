@@ -20,7 +20,7 @@ kubectl create ns prow
 kubectl create secret -n prow generic hmac-token --from-file=hmac=./hmac-token
 
 
-## 第二步：准备github-token，需要Github App的信息( <a href="#1">连同第九步一起执行最简单</a> )
+## 第二步：准备github-token，需要Github App的权限信息( <a href="#1">连同第九步一起执行最优雅</a> )
 App ID: 162160
 
 > 从Github app下载private-key.pem到本地
@@ -90,33 +90,34 @@ kubectl apply -f starter.yaml
 
 
 ## 第六步：验证一下prow的各个组件是否成功
+
 kubectl get pods -n prow
 
-> 在minio的console中创建bucket: tide
+### 在minio的console中创建bucket: tide
 
 kubectl -n prow scale deploy tide --replicas=0
 
 kubectl -n prow scale deploy tide --replicas=1
 
-> 在minio的console中创建bucket: statusreconciler
+### 在minio的console中创建bucket: statusreconciler
 
 kubectl -n prow scale deploy statusreconciler --replicas=0
 
 kubectl -n prow scale deploy statusreconciler --replicas=1
 
-> 在minio的console中创建bucket: prow-logs
+### 在minio的console中创建bucket: prow-logs
 
 kubectl -n prow scale deploy crier --replicas=0
 
 kubectl -n prow scale deploy crier --replicas=1
 
-> 配置ghproxy
+### 配置ghproxy
 
 cd install-prow
 
 cp ~/app/test-infra/config/prow/cluster/pushgateway_deployment.yaml ./
 
-修改pushgateway_deployment.yaml中所有的namespace: default为prow
+> 修改pushgateway_deployment.yaml中所有的namespace: default为prow
 
 kubectl apply -f pushgateway_deployment.yaml
 
@@ -124,7 +125,7 @@ kubectl -n prow scale deploy ghproxy --replicas=0
 
 kubectl -n prow scale deploy ghproxy --replicas=1
 
-在starter.yaml中的ghproxy的deployment中添加下面的参数后，再次重启ghproxy
+> 在starter.yaml中的ghproxy的deployment中添加下面的参数后，再次重启ghproxy
 
 --legacy-disable-disk-cache-partitions-by-auth-header=false
 
@@ -140,7 +141,7 @@ kubectl -n prow scale deploy ghproxy --replicas=1
           command: ["/bin/date"]
 ```
 
-重新执行
+> 重新执行
 
 kubectl apply -f starter.yaml
 
@@ -184,22 +185,22 @@ ngrok start --all
 
 http://5216-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/hook
 
-把之前的hmac-token填入github仓库的webhook的secret处
+> 把之前的hmac-token填入github仓库的webhook的secret处
 
 cat hmac-token
 
 
-## <a name="1">第九步</a>：配置prow的 deck组件 - 显示出PR status菜单
+## <a name="1">第九步</a>：配置prow的 deck组件 - 显示出PR status菜单(三个secret)
 
 ### 配置github oauth app
 
-> 1.Create your GitHub Oauth application
+#### 1.Create your GitHub Oauth application
 
 oauth app：Authorization callback URL地址
 
 http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/github-login/redirect
 
->> 用你的oauth app的client id 和secret（以下id/secret已失效）
+> 用你的oauth app的client id 和secret（以下id/secret已失效）
 
 vi github-oauth-config.yaml
 
@@ -210,28 +211,28 @@ redirect_url: http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/github
 final_redirect_url: http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/pr
 ```
 
-> 2. 创建github-oauth-config的secret
+#### 2.创建github-oauth-config的secret
 
 kubectl -n prow create secret generic github-oauth-config --from-file=secret=./github-oauth-config.yaml
 
 
-> 3. 创建cookie的secret
+#### 3. 创建cookie的secret
 
 openssl rand -out cookie.txt -base64 32
 
 kubectl -n prow create secret generic cookie --from-file=secret=./cookie.txt
 
-> 4. 准备personal access token作为oauth-token（以下token已失效）
+#### 4. 准备personal access token作为oauth-token（以下token已失效）
 
 echo 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 > oauth-token
 
-注意这里不是 =secret= 而是=oauth=
+> **注意这里不是 =secret= 而是=oauth=**
 
 kubectl -n prow create secret generic oauth-token --from-file=oauth=./oauth-token
 
-> 5. 修改starter.yaml的deck -> deployment部分
+#### 5. 修改starter.yaml的deck -> deployment部分
 
-> 6. 重启deck
+#### 6. 重启deck
 
 kubectl -n prow scale deploy deck --replicas=0
 
