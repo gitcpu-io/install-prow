@@ -123,15 +123,15 @@ data:
         orgs:
         - gitcpu-io
 
-    presubmits:
-      gitcpu-io/prow-demo:
-        - name: run-unit-test
-          agent: kubernetes
-          always_run: true
-          spec:
-            containers:
-              - image: golang:latest
-                command: [ "go","test","." ]
+#    presubmits:
+#      gitcpu-io/prow-demo:
+#        - name: run-unit-test
+#          agent: kubernetes
+#          always_run: true
+#          spec:
+#            containers:
+#              - image: golang:latest
+#                command: [ "go","test","." ]
 
     decorate_all_jobs: true
 #    periodics:
@@ -540,6 +540,13 @@ spec:
                 name: hook
                 port:
                   number: 8888
+#          - path: /minio #公有云配置访问minio-console
+#              pathType: Prefix
+#              backend:
+#                service:
+#                  name: minio-console
+#                  port:
+#                    number: 8003  #指向minio-console的svc的port
 ---
 apiVersion: apps/v1
 kind: Deployment
