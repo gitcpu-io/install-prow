@@ -6,142 +6,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: prow
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: prow
-  name: plugins
-data:
-  plugins.yaml: |
-    plugins:
-      gitcpu-io:
-        plugins:
-        - approve
-        - assign
-        - blunderbuss
-        - cat
-        - dog
-        - help
-        - heart
-        - hold
-        - label
-        - lgtm
-        - trigger
-        - verify-owners
-        - wip
-        - yuks
-        - pony
-        - size
-    welcome:  ##添加weblcome
-    - message_template: "Welcome @{{.AuthorLogin}}! <br><br>It looks like this is your first PR to <a href='https://github.com/{{.Org}}/{{.Repo}}'>{{.Org}}/{{.Repo}}</a> 🎉. Please refer to our [pull request process documentation](https://git.k8s.io/community/contributors/guide/pull-requests.md) to help your PR have a smooth ride to approval. <br><br>You will be prompted by a bot to use commands during the review process. Do not be afraid to follow the prompts! It is okay to experiment. [Here is the bot commands documentation](https://go.k8s.io/bot-commands). <br><br>You can also check if {{.Org}}/{{.Repo}} has [its own contribution guidelines](https://github.com/{{.Org}}/{{.Repo}}/tree/master/CONTRIBUTING.md). <br><br>You may want to refer to our [testing guide](https://git.k8s.io/community/contributors/devel/sig-testing/testing.md) if you run into trouble with your tests not passing. <br><br>If you are having difficulty getting your pull request seen, please follow the [recommended escalation practices](https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#why-is-my-pull-request-not-getting-reviewed). Also, for tips and tricks in the contribution process you may want to read the [Kubernetes contributor cheat sheet](https://git.k8s.io/community/contributors/guide/contributor-cheatsheet/README.md). We want to make sure your contribution gets all the attention it needs! <br><br>Thank you, and welcome to Kubernetes. :smiley:"
 
----
-#apiVersion: v1
-#kind: Secret
-#metadata:
-#  namespace: prow
-#  name: github-token
-#stringData:
-#  cert: <<insert-downloaded-cert-here>>
-#  appid: <<insert-the-app-id-here>>
-#---
-#apiVersion: v1
-#kind: Secret
-#metadata:
-#  namespace: prow
-#  name: hmac-token
-#stringData:
-#  # Generate via `openssl rand -hex 20`. This is the secret used in the GitHub webhook configuration
-#  hmac: << insert-hmac-token-here >>
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: prow
-  name: config
-data:
-  config.yaml: |
-    prowjob_namespace: prow
-    pod_namespace: test-pods
-
-    in_repo_config:
-      enabled:
-        "*": true
-
-    deck:
-     spyglass:
-       lenses:
-       - lens:
-           name: metadata
-         required_files:
-         - started.json|finished.json
-       - lens:
-           config:
-           name: buildlog
-         required_files:
-         - build-log.txt
-       - lens:
-           name: junit
-         required_files:
-         - .*/junit.*\.xml
-       - lens:
-           name: podinfo
-         required_files:
-         - podinfo.json
-
-    plank:
-      job_url_prefix_config:
-        "*": http://prow.gitcpu.io/view/
-      report_templates:
-        '*': >-
-            [Full PR test history](http://prow.gitcpu.io/pr-history?org={{.Spec.Refs.Org}}&repo={{.Spec.Refs.Repo}}&pr={{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}).
-            [Your PR dashboard](http://prow.gitcpu.io/pr?query=is:pr+state:open+author:{{with
-            index .Spec.Refs.Pulls 0}}{{.Author}}{{end}}).
-      default_decoration_configs:
-        "*":
-          gcs_configuration:
-            bucket: s3://prow-logs
-            path_strategy: explicit
-          s3_credentials_secret: s3-credentials
-          utility_images:
-            clonerefs: gcr.io/k8s-prow/clonerefs:v20211111-bce61c7c4a
-            entrypoint: gcr.io/k8s-prow/entrypoint:v20211111-bce61c7c4a
-            initupload: gcr.io/k8s-prow/initupload:v20211111-bce61c7c4a
-            sidecar: gcr.io/k8s-prow/sidecar:v20211111-bce61c7c4a
-
-    tide:
-      queries:
-      - labels:
-        - lgtm
-        - approved
-        missingLabels:
-        - needs-rebase
-        - do-not-merge/hold
-        - do-not-merge/work-in-progress
-        - do-not-merge/invalid-owners-file
-        orgs:
-        - gitcpu-io
-
-#    presubmits:
-#      gitcpu-io/prow-demo:
-#        - name: run-unit-test
-#          agent: kubernetes
-#          always_run: true
-#          spec:
-#            containers:
-#              - image: golang:latest
-#                command: [ "go","test","." ]
-
-    decorate_all_jobs: true
-#    periodics:
-#    - interval: 1m
-#      agent: kubernetes
-#      name: echo-test
-#      spec:
-#        containers:
-#        - image: alpine
-#          command: ["/bin/date"]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -169,7 +34,7 @@ spec:
       terminationGracePeriodSeconds: 180
       containers:
         - name: hook
-          image: rubinus/k8s-prow-hook:v20211111-bce61c7c4a
+          image: gcr.io/k8s-prow/hook:v20211111-bce61c7c4a
           imagePullPolicy: Always
           args:
             - --dry-run=false
@@ -523,7 +388,7 @@ spec:
       port:
         number: 80
   rules:
-    - host: prow.gitcpu.io
+    - host: prow.gitcpu.io  #需要替换成你的域名
       http:
         paths:
           - path: /

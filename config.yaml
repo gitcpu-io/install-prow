@@ -1,0 +1,81 @@
+prowjob_namespace: prow
+pod_namespace: test-pods
+
+in_repo_config:
+  enabled:
+    "*": true
+
+deck:
+  spyglass:
+    lenses:
+      - lens:
+          name: metadata
+        required_files:
+          - started.json|finished.json
+      - lens:
+          config:
+          name: buildlog
+        required_files:
+          - build-log.txt
+      - lens:
+          name: junit
+        required_files:
+          - .*/junit.*\.xml
+      - lens:
+          name: podinfo
+        required_files:
+          - podinfo.json
+
+plank:  #这里需要替换你的域名，共三处
+  job_url_prefix_config:
+    "*": http://prow.gitcpu.io/view/
+  report_templates:
+    '*': >-
+      [Full PR test history](http://prow.gitcpu.io/pr-history?org={{.Spec.Refs.Org}}&repo={{.Spec.Refs.Repo}}&pr={{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}).
+      [Your PR dashboard](http://prow.gitcpu.io/pr?query=is:pr+state:open+author:{{with
+      index .Spec.Refs.Pulls 0}}{{.Author}}{{end}}).
+  default_decoration_configs:
+    "*":
+      gcs_configuration:
+        bucket: s3://prow-logs
+        path_strategy: explicit
+      s3_credentials_secret: s3-credentials
+      utility_images:
+        clonerefs: gcr.io/k8s-prow/clonerefs:v20211111-bce61c7c4a
+        entrypoint: gcr.io/k8s-prow/entrypoint:v20211111-bce61c7c4a
+        initupload: gcr.io/k8s-prow/initupload:v20211111-bce61c7c4a
+        sidecar: gcr.io/k8s-prow/sidecar:v20211111-bce61c7c4a
+
+tide:
+  queries:
+    - labels:
+        - lgtm
+        - approved
+      missingLabels:
+        - needs-rebase
+        - do-not-merge/hold
+        - do-not-merge/work-in-progress
+        - do-not-merge/invalid-owners-file
+      orgs:
+        - gitcpu-io
+
+#presubmits:
+#  gitcpu-io/prow-demo: #需要替换成你的组织名/仓库名
+#    - name: run-unit-test
+#      agent: kubernetes
+#      always_run: true
+#      spec:
+#        containers:
+#          - image: golang:alpine  #使用alpine时 单元测试特意报错，正常使用latest
+#            command: [ "go","test","." ]
+
+decorate_all_jobs: true
+
+#periodics:
+#  - interval: 1m
+#    agent: kubernetes
+#    name: echo-test
+#    spec:
+#      containers:
+#        - image: alpine
+#          command: ["/bin/date"]
