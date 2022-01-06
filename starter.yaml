@@ -92,11 +92,11 @@ data:
 
     plank:
       job_url_prefix_config:
-        "*": http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/view/
+        "*": http://prow.gitcpu.io/view/
       report_templates:
         '*': >-
-            [Full PR test history](http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/pr-history?org={{.Spec.Refs.Org}}&repo={{.Spec.Refs.Repo}}&pr={{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}).
-            [Your PR dashboard](http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/pr?query=is:pr+state:open+author:{{with
+            [Full PR test history](http://prow.gitcpu.io/pr-history?org={{.Spec.Refs.Org}}&repo={{.Spec.Refs.Repo}}&pr={{with index .Spec.Refs.Pulls 0}}{{.Number}}{{end}}).
+            [Your PR dashboard](http://prow.gitcpu.io/pr?query=is:pr+state:open+author:{{with
             index .Spec.Refs.Pulls 0}}{{.Author}}{{end}}).
       default_decoration_configs:
         "*":
