@@ -389,6 +389,16 @@ spec:
       port:
         number: 80
   rules:
+#    - host: minio.gitcpu.io  #公有云配置访问minio-console,需要替换成你的域名
+#      http:
+#        paths:
+#          - path: /
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: minio-console
+#                port:
+#                  number: 8003  #指向minio-console的svc的port
     - host: prow.gitcpu.io  #需要替换成你的域名
       http:
         paths:
@@ -406,13 +416,6 @@ spec:
                 name: hook
                 port:
                   number: 8888
-#          - path: /minio #公有云配置访问minio-console
-#            pathType: Prefix
-#            backend:
-#              service:
-#                name: minio-console
-#                port:
-#                  number: 8003  #指向minio-console的svc的port
 ---
 apiVersion: apps/v1
 kind: Deployment
