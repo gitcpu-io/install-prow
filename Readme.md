@@ -3,6 +3,9 @@
 ## clone test-infra到本地
 git clone https://github.com/kubernetes/test-infra.git
 
+## clone 安装Prow的文档仓库
+git clone https://github.com/gitcpu-io/install-prow.git
+
 ## 第一步：准备hmac-token的secret
 
 cd install
@@ -28,22 +31,26 @@ cd install
 
 kubectl create secret -n prow generic github-token --from-file=cert=./private-key.pem --from-literal=appid=162160
 
-## 第三步：准备替换，粗体标注部分就可以了，其它的已完成
-The github app cert by replacing the <<insert-downloaded-cert-here>> string(已通过命令执行)
+## 第三步：准备替换starter.yaml、config.yaml、plugins.yaml
 
-The github app id by replacing the <<insert-the-app-id-here>> string(已通过命令执行)
+- 把config.yaml的三处域名，一个组织/仓库替换成你自己的
 
-The hmac token by replacing the << insert-hmac-token-here >> string(已通过命令执行)
+kubectl -n prow delete cm config
 
-**The domain by replacing the << your-domain.com >> string 必须要替换成功**
+kubectl -n prow create cm config --from-file=config.yaml
 
-把 prow.gitcpu.io 替换成你自己的本机域名，或是公有云域名
+- 把plugins.yaml中的组织/仓库替换成你自己的
 
-Optionally, you can update the cert-manager.io/cluster-issuer: annotation if you use cert-manager
+kubectl -n prow delete cm plugins
 
-**Your github organization(s) by replacing the << your_github_org >> string (你的组织账户)**
+kubectl -n prow create cm plugins --from-file=plugins.yaml
 
-把 gitcpu.io 替换成 你自己的组织
+
+- 把starter.yaml中 prow.gitcpu.io 替换成你自己的本机域名，或是公有云域名
+
+
+- Optionally, you can update the cert-manager.io/cluster-issuer: annotation if you use cert-manager
+
 
 ## 准备image，替换成gcr.io的镜像，执行下面这个shell，如果可以访问gcr.io就不需要执行
 cd install-prow
@@ -192,14 +199,16 @@ oauth app：Authorization callback URL地址
 
 http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/github-login/redirect
 
->> 用得到oauth app的client id 和secret
+>> 用你的oauth app的client id 和secret（以下id/secret已失效）
 
 vi github-oauth-config.yaml
 
+```yaml
 client_id: 8616224f940863fbd513
 client_secret: 12cf83ca6d2ac00a9725aa3ce35a4bbb3b674895
 redirect_url: http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/github-login/redirect
 final_redirect_url: http://d581-2408-8456-3030-2f05-9c42-4c79-f8d7-9d1.ngrok.io/pr
+```
 
 > 2. 创建github-oauth-config的secret
 
@@ -212,7 +221,7 @@ openssl rand -out cookie.txt -base64 32
 
 kubectl -n prow create secret generic cookie --from-file=secret=./cookie.txt
 
-> 4. 准备personal access token作为oauth-token
+> 4. 准备personal access token作为oauth-token（以下token已失效）
 
 echo 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 > oauth-token
 
@@ -249,7 +258,18 @@ kubectl apply -f label_sync_job.yaml
 
 kubectl apply -f label_sync_cron_job.yaml
 
-
+## 添加presubmits，运行ProwJob
+```yaml
+presubmits:
+  gitcpu-io/prow-demo: #需要替换成你的组织名/仓库名
+    - name: run-unit-test
+      agent: kubernetes
+      always_run: true
+      spec:
+        containers:
+          - image: golang:alpine  #使用alpine时 单元测试特意报错，正常使用latest
+            command: [ "go","test","." ]
+```
 
 ## 遇到的问题, hook, tide, crier组件添加代理，前提是你有梯子~~~
 kubectl -n prow exec -it POD名字 sh
@@ -266,8 +286,10 @@ git clone https://github.com/gitcpu-io/prow-demo.git
 
 ### 宿主机本本设置git代理（在terminal中执行git push时加快速度）
 git config --global http.proxy http://192.168.110.235:1089
+
 git config --global https.proxy http://192.168.110.235:1089
 
 ### 宿主机本本取消git代理
 git config --global --unset http.proxy
+
 git config --global --unset https.proxy
