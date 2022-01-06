@@ -264,7 +264,11 @@ kubectl apply -f label_sync_cron_job.yaml
 
 kubectl apply -f ingress-nginx.yaml
 
-修改starter.yaml的ingress部分，添加minio-console，以及ingressClass
+修改starter.yaml的ingress部分
+
+- 添加ingress配置规则minio-console， 
+  
+- 添加注释ingressClass的名字 kubernetes.io/ingress.class: nginx
 
 > 重新执行
 
@@ -274,7 +278,7 @@ kubectl apply -f starter.yaml
 
 - http://prow.gitcpu.io
 
-- http://prow.gitcpu.io/minio
+- http://minio.gitcpu.io
 
 ## 添加presubmits，运行ProwJob
 ```yaml
@@ -286,6 +290,7 @@ presubmits:
       spec:
         containers:
           - image: golang:alpine  #使用alpine时 单元测试特意报错，正常使用latest
+#          - image: golang:latest
             command: [ "go","test","." ]
 ```
 
