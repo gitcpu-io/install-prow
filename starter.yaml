@@ -379,6 +379,7 @@ metadata:
   annotations:
     # Change this to your issuer when using cert-manager. Does
     # nothing when not using cert-manager.
+#    kubernetes.io/ingress.class: nginx #公有云使用ingress-nginx
     cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
   defaultBackend:
