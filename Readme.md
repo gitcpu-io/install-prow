@@ -266,8 +266,8 @@ kubectl apply -f ingress-nginx.yaml
 
 修改starter.yaml的ingress部分
 
-- 添加ingress配置规则minio-console， 
-  
+- 添加ingress配置规则minio-console，
+
 - 添加注释ingressClass的名字 kubernetes.io/ingress.class: nginx
 
 > 重新执行
@@ -293,6 +293,17 @@ presubmits:
 #          - image: golang:latest
             command: [ "go","test","." ]
 ```
+
+- >删除并新建 config 这个ConfigMap
+
+kubectl -n prow delete cm config
+
+kubectl -n prow create cm config --from-file=config.yaml
+
+- >重新执行apply
+
+kubectl apply -f starter.yaml
+
 
 ## 遇到的问题, hook, tide, crier组件添加代理，前提是你有梯子~~~
 kubectl -n prow exec -it POD名字 sh
