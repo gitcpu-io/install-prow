@@ -406,12 +406,12 @@ spec:
                 port:
                   number: 8888
 #          - path: /minio #公有云配置访问minio-console
-#              pathType: Prefix
-#              backend:
-#                service:
-#                  name: minio-console
-#                  port:
-#                    number: 8003  #指向minio-console的svc的port
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: minio-console
+#                port:
+#                  number: 8003  #指向minio-console的svc的port
 ---
 apiVersion: apps/v1
 kind: Deployment
